@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>gmt.base_plotting &#8212; GMT/Python</title>
+    <link rel="stylesheet" href="../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/style.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="../../_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default ">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../index.html">
+          GMT/Python</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../install.html">Install</a></li>
+                <li><a href="../../api.html">API</a></li>
+                <li><a href="../../first-steps.html">Tutorial</a></li>
+                <li><a href="../../design.html">Design</a></li>
+                <li><a href="https://github.com/GenericMappingTools/gmt-python">Code</a></li>
+                <li><a href="https://gitter.im/GenericMappingTools/gmt-python">Contact</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 content">
+      
+  <h1>Source code for gmt.base_plotting</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Base class with plot generating commands.</span>
+<span class="sd">Does not define any special non-GMT methods (savefig, show, etc).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">.clib</span> <span class="k">import</span> <span class="n">LibGMT</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">build_arg_string</span>
+<span class="kn">from</span> <span class="nn">.decorators</span> <span class="k">import</span> <span class="n">fmt_docstring</span><span class="p">,</span> <span class="n">use_alias</span><span class="p">,</span> <span class="n">kwargs_to_strings</span>
+
+
+<span class="k">class</span> <span class="nc">BasePlotting</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for Figure and Subplot.</span>
+
+<span class="sd">    Defines the plot generating methods and a hook for subclasses to insert</span>
+<span class="sd">    special arguments (the _preprocess method).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint: disable=no-self-use</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Make changes to kwargs before passing them to ``call_module``.</span>
+
+<span class="sd">        This method is run before all plotting commands and can be used to</span>
+<span class="sd">        insert special arguments into the kwargs or make any actions that are</span>
+<span class="sd">        required before ``call_module``.</span>
+
+<span class="sd">        For example, the :class:`gmt.Figure` needs this to tell the GMT modules</span>
+<span class="sd">        to plot to a specific figure.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        kwargs : dict</span>
+<span class="sd">            A modified version of the input kwargs.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">kwargs</span>
+
+    <span class="nd">@fmt_docstring</span>
+    <span class="nd">@use_alias</span><span class="p">(</span><span class="n">R</span><span class="o">=</span><span class="s1">&#39;region&#39;</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s1">&#39;projection&#39;</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="s1">&#39;area_thresh&#39;</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="s1">&#39;frame&#39;</span><span class="p">,</span>
+               <span class="n">D</span><span class="o">=</span><span class="s1">&#39;resolution&#39;</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="s1">&#39;portrait&#39;</span><span class="p">,</span> <span class="n">I</span><span class="o">=</span><span class="s1">&#39;rivers&#39;</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="s1">&#39;borders&#39;</span><span class="p">,</span>
+               <span class="n">W</span><span class="o">=</span><span class="s1">&#39;shorelines&#39;</span><span class="p">,</span> <span class="n">G</span><span class="o">=</span><span class="s1">&#39;land&#39;</span><span class="p">,</span> <span class="n">S</span><span class="o">=</span><span class="s1">&#39;water&#39;</span><span class="p">)</span>
+    <span class="nd">@kwargs_to_strings</span><span class="p">(</span><span class="n">R</span><span class="o">=</span><span class="s1">&#39;sequence&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">pscoast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot continents, shorelines, rivers, and borders on maps</span>
+
+<span class="sd">        Plots grayshaded, colored, or textured land-masses [or water-masses] on</span>
+<span class="sd">        maps and [optionally] draws coastlines, rivers, and political</span>
+<span class="sd">        boundaries.  Alternatively, it can (1) issue clip paths that will</span>
+<span class="sd">        contain all land or all water areas, or (2) dump the data to an ASCII</span>
+<span class="sd">        table. The data files come in 5 different resolutions: (**f**)ull,</span>
+<span class="sd">        (**h**)igh, (**i**)ntermediate, (**l**)ow, and (**c**)rude. The full</span>
+<span class="sd">        resolution files amount to more than 55 Mb of data and provide great</span>
+<span class="sd">        detail; for maps of larger geographical extent it is more economical to</span>
+<span class="sd">        use one of the other resolutions. If the user selects to paint the</span>
+<span class="sd">        land-areas and does not specify fill of water-areas then the latter</span>
+<span class="sd">        will be transparent (i.e., earlier graphics drawn in those areas will</span>
+<span class="sd">        not be overwritten).  Likewise, if the water-areas are painted and no</span>
+<span class="sd">        land fill is set then the land-areas will be transparent.</span>
+
+<span class="sd">        A map projection must be supplied.</span>
+
+<span class="sd">        {gmt_module_docs}</span>
+
+<span class="sd">        {aliases}</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        {J}</span>
+<span class="sd">        {R}</span>
+<span class="sd">        A : int, float, or str</span>
+<span class="sd">            ``&#39;min_area[/min_level/max_level][+ag|i|s|S][+r|l][+ppercent]&#39;``</span>
+<span class="sd">            Features with an area smaller than min_area in km^2 or of</span>
+<span class="sd">            hierarchical level that is lower than min_level or higher than</span>
+<span class="sd">            max_level will not be plotted.</span>
+<span class="sd">        {B}</span>
+<span class="sd">        C : str</span>
+<span class="sd">            Set the shade, color, or pattern for lakes and river-lakes.</span>
+<span class="sd">        D : str</span>
+<span class="sd">            Selects the resolution of the data set to use ((f)ull, (h)igh,</span>
+<span class="sd">            (i)ntermediate, (l)ow, and (c)rude).</span>
+<span class="sd">        G : str</span>
+<span class="sd">            Select filling or clipping of “dry” areas.</span>
+<span class="sd">        I : str</span>
+<span class="sd">            ``&#39;river[/pen]&#39;``</span>
+<span class="sd">            Draw rivers. Specify the type of rivers and [optionally] append pen</span>
+<span class="sd">            attributes.</span>
+<span class="sd">        N : str</span>
+<span class="sd">            ``&#39;border[/pen]&#39;``</span>
+<span class="sd">            Draw political boundaries. Specify the type of boundary and</span>
+<span class="sd">            [optionally] append pen attributes</span>
+<span class="sd">        S : str</span>
+<span class="sd">            Select filling or clipping of “wet” areas.</span>
+<span class="sd">        {U}</span>
+<span class="sd">        W : str</span>
+<span class="sd">            ``&#39;[level/]pen&#39;``</span>
+<span class="sd">            Draw shorelines [Default is no shorelines]. Append pen attributes.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preprocess</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">LibGMT</span><span class="p">()</span> <span class="k">as</span> <span class="n">lib</span><span class="p">:</span>
+            <span class="n">lib</span><span class="o">.</span><span class="n">call_module</span><span class="p">(</span><span class="s1">&#39;pscoast&#39;</span><span class="p">,</span> <span class="n">build_arg_string</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
+
+    <span class="nd">@fmt_docstring</span>
+    <span class="nd">@use_alias</span><span class="p">(</span><span class="n">R</span><span class="o">=</span><span class="s1">&#39;region&#39;</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s1">&#39;projection&#39;</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="s1">&#39;frame&#39;</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="s1">&#39;portrait&#39;</span><span class="p">,</span> <span class="n">S</span><span class="o">=</span><span class="s1">&#39;style&#39;</span><span class="p">,</span>
+               <span class="n">G</span><span class="o">=</span><span class="s1">&#39;color&#39;</span><span class="p">,</span> <span class="n">W</span><span class="o">=</span><span class="s1">&#39;pen&#39;</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="s1">&#39;columns&#39;</span><span class="p">)</span>
+    <span class="nd">@kwargs_to_strings</span><span class="p">(</span><span class="n">R</span><span class="o">=</span><span class="s1">&#39;sequence&#39;</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="s1">&#39;sequence_comma&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">psxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot lines, polygons, and symbols on maps.</span>
+
+<span class="sd">        Takes (x,y) pairs as inputs or reads them from a file and plots lines,</span>
+<span class="sd">        polygons, or symbols at those locations on a map.</span>
+
+<span class="sd">        If a symbol is selected and no symbol size given, then psxy will</span>
+<span class="sd">        interpret the third column of the input data as symbol size. Symbols</span>
+<span class="sd">        whose size is &lt;= 0 are skipped. If no symbols are specified then the</span>
+<span class="sd">        symbol code (see *S* below) must be present as last column in the</span>
+<span class="sd">        input. If *S* is not used, a line connecting the data points will be</span>
+<span class="sd">        drawn instead. To explicitly close polygons, use *L*. Select a fill</span>
+<span class="sd">        with *G*. If *G* is set, *W* will control whether the polygon outline</span>
+<span class="sd">        is drawn or not. If a symbol is selected, *G* and *W* determines the</span>
+<span class="sd">        fill and outline/no outline, respectively.</span>
+
+<span class="sd">        {gmt_module_docs}</span>
+
+<span class="sd">        {aliases}</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : str or array</span>
+<span class="sd">            *Required*. Input data table as an array or a file name.</span>
+<span class="sd">            **Only accepts file names for now.**</span>
+<span class="sd">        {J}</span>
+<span class="sd">        {R}</span>
+<span class="sd">        A : bool or str</span>
+<span class="sd">            ``&#39;[m|p|x|y]&#39;``</span>
+<span class="sd">            By default, geographic line segments are drawn as great circle</span>
+<span class="sd">            arcs. To draw them as straight lines, use *A*.</span>
+<span class="sd">        {B}</span>
+<span class="sd">        {CPT}</span>
+<span class="sd">        D : str</span>
+<span class="sd">            ``&#39;dx/dy&#39;``: Offset the plot symbol or line locations by the given</span>
+<span class="sd">            amounts dx/dy.</span>
+<span class="sd">        E : bool or str</span>
+<span class="sd">            ``&#39;[x|y|X|Y][+a][+cl|f][+n][+wcap][+ppen]&#39;``.</span>
+<span class="sd">            Draw symmetrical error bars.</span>
+<span class="sd">        {G}</span>
+<span class="sd">        {P}</span>
+<span class="sd">        S : str</span>
+<span class="sd">            Plot symbols (including vectors, pie slices, fronts, decorated or</span>
+<span class="sd">            quoted lines).</span>
+<span class="sd">        {W}</span>
+<span class="sd">        {U}</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preprocess</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="s1">&#39;Only accepts file names for now.&#39;</span>
+        <span class="n">arg_str</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">data</span><span class="p">,</span> <span class="n">build_arg_string</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)])</span>
+        <span class="k">with</span> <span class="n">LibGMT</span><span class="p">()</span> <span class="k">as</span> <span class="n">lib</span><span class="p">:</span>
+            <span class="n">lib</span><span class="o">.</span><span class="n">call_module</span><span class="p">(</span><span class="s1">&#39;psxy&#39;</span><span class="p">,</span> <span class="n">arg_str</span><span class="p">)</span>
+
+    <span class="nd">@fmt_docstring</span>
+    <span class="nd">@use_alias</span><span class="p">(</span><span class="n">R</span><span class="o">=</span><span class="s1">&#39;region&#39;</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="s1">&#39;projection&#39;</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="s1">&#39;frame&#39;</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="s1">&#39;portrait&#39;</span><span class="p">)</span>
+    <span class="nd">@kwargs_to_strings</span><span class="p">(</span><span class="n">R</span><span class="o">=</span><span class="s1">&#39;sequence&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">psbasemap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Produce a basemap for the figure.</span>
+
+<span class="sd">        Several map projections are available, and the user may specify</span>
+<span class="sd">        separate tick-mark intervals for boundary annotation, ticking, and</span>
+<span class="sd">        [optionally] gridlines. A simple map scale or directional rose may also</span>
+<span class="sd">        be plotted.</span>
+
+<span class="sd">        At least one of the options *B*, *L*, or *T* must be specified.</span>
+
+<span class="sd">        {gmt_module_docs}</span>
+
+<span class="sd">        {aliases}</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        {J}</span>
+<span class="sd">        {R}</span>
+<span class="sd">        {B}</span>
+<span class="sd">        D : str</span>
+<span class="sd">            ``&#39;[unit]xmin/xmax/ymin/ymax[r][+sfile][+t]&#39;``</span>
+<span class="sd">            Draw a simple map insert box on the map. Requires *F*.</span>
+<span class="sd">        F : bool or str</span>
+<span class="sd">            Without further options, draws a rectangular border around any map</span>
+<span class="sd">            insert (*D*), map scale (*L*) or map rose (*T*).</span>
+<span class="sd">        L : str</span>
+<span class="sd">            ``&#39;[g|j|J|n|x]refpoint&#39;``</span>
+<span class="sd">            Draws a simple map scale centered on the reference point specified.</span>
+<span class="sd">        {P}</span>
+<span class="sd">        Td : str</span>
+<span class="sd">            Draws a map directional rose on the map at the location defined by</span>
+<span class="sd">            the reference and anchor points.</span>
+<span class="sd">        Tm : str</span>
+<span class="sd">            Draws a map magnetic rose on the map at the location defined by the</span>
+<span class="sd">            reference and anchor points</span>
+<span class="sd">        {U}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preprocess</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="s1">&#39;B&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="s1">&#39;L&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="s1">&#39;T&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> \
+            <span class="s2">&quot;At least one of B, L, or T must be specified.&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;D&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="s1">&#39;F&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> \
+                <span class="s2">&quot;Option D requires F to be specified as well.&quot;</span>
+        <span class="k">with</span> <span class="n">LibGMT</span><span class="p">()</span> <span class="k">as</span> <span class="n">lib</span><span class="p">:</span>
+            <span class="n">lib</span><span class="o">.</span><span class="n">call_module</span><span class="p">(</span><span class="s1">&#39;psbasemap&#39;</span><span class="p">,</span> <span class="n">build_arg_string</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, Leonardo Uieda.<br/>
+      Last updated on Nov 16, 2017.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.5.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

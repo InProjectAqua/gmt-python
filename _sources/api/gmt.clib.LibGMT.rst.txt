@@ -1,0 +1,9 @@
+« :ref:`api`
+
+.. title:: gmt.clib.LibGMT
+
+.. currentmodule:: gmt.clib
+
+.. autoclass:: LibGMT
+    :members:
+    :inherited-members:

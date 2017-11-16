@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>gmt.clib.core &#8212; GMT/Python</title>
+    <link rel="stylesheet" href="../../../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/style.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="../../../_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="../../../_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../../../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default ">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+          GMT/Python</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../../install.html">Install</a></li>
+                <li><a href="../../../api.html">API</a></li>
+                <li><a href="../../../first-steps.html">Tutorial</a></li>
+                <li><a href="../../../design.html">Design</a></li>
+                <li><a href="https://github.com/GenericMappingTools/gmt-python">Code</a></li>
+                <li><a href="https://gitter.im/GenericMappingTools/gmt-python">Contact</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 content">
+      
+  <h1>Source code for gmt.clib.core</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">ctypes wrappers for core functions from the C API</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">ctypes</span>
+
+<span class="kn">from</span> <span class="nn">..exceptions</span> <span class="k">import</span> <span class="n">GMTCLibError</span><span class="p">,</span> <span class="n">GMTCLibNoSessionError</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">load_libgmt</span><span class="p">,</span> <span class="n">check_status_code</span><span class="p">,</span> <span class="n">kwargs_to_ctypes_array</span>
+
+
+<div class="viewcode-block" id="LibGMT"><a class="viewcode-back" href="../../../api/gmt.clib.LibGMT.html#gmt.clib.LibGMT">[docs]</a><span class="k">class</span> <span class="nc">LibGMT</span><span class="p">():</span>  <span class="c1"># pylint: disable=too-many-instance-attributes</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load and access the GMT shared library (libgmt).</span>
+
+<span class="sd">    Works as a context manager to create a GMT C API session and destroy it in</span>
+<span class="sd">    the end. The context manager feature eliminates the need for the</span>
+<span class="sd">    ``GMT_Create_Session`` and ``GMT_Destroy_Session`` functions. Thus, they</span>
+<span class="sd">    are not exposed in the Python API. If you need the void pointer to the GMT</span>
+<span class="sd">    session, use the ``current_session`` attribute.</span>
+
+<span class="sd">    Functions of the shared library are exposed as methods of this class. Most</span>
+<span class="sd">    methods MUST be used inside the context manager &#39;with&#39; block.</span>
+
+<span class="sd">    If creating GMT data structures to communicate data, put that code inside</span>
+<span class="sd">    this context manager to reuse the same session.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    libname : str</span>
+<span class="sd">        The name of the GMT shared library **without the extension**. Can be a</span>
+<span class="sd">        full path to the library or just the library name.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    GMTCLibNotFoundError</span>
+<span class="sd">        If there was any problem loading the library (couldn&#39;t find it or</span>
+<span class="sd">        couldn&#39;t access the functions).</span>
+<span class="sd">    GMTCLibNoSessionError</span>
+<span class="sd">        If you try to call a method outside of a &#39;with&#39; block.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    &gt;&gt;&gt; with LibGMT() as lib:</span>
+<span class="sd">    ...     lib.call_module(&#39;figure&#39;, &#39;my-figure&#39;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data_families</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;GMT_IS_DATASET&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_IS_GRID&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_IS_PALETTE&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_IS_MATRIX&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_IS_VECTOR&#39;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="n">data_vias</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;GMT_VIA_MATRIX&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_VIA_VECTOR&#39;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="n">data_geometries</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;GMT_IS_NONE&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_IS_POINT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_IS_LINE&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_IS_POLYGON&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_IS_PLP&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_IS_SURFACE&#39;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="n">data_modes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;GMT_CONTAINER_ONLY&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;GMT_OUTPUT&#39;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">libname</span><span class="o">=</span><span class="s1">&#39;libgmt&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session_name</span> <span class="o">=</span> <span class="s1">&#39;gmt-python-session&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_libgmt</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_get_enum</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_session</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_destroy_session</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_call_module</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bind_clib_functions</span><span class="p">(</span><span class="n">libname</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">current_session</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The C void pointer for the current open GMT session.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        GMTCLibNoSessionError</span>
+<span class="sd">            If trying to access without a currently open GMT session (i.e.,</span>
+<span class="sd">            outside of the context manager).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">GMTCLibNoSessionError</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+                <span class="s2">&quot;No currently open session.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Call methods only inside a &#39;with&#39; block.&quot;</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session_id</span>
+
+    <span class="nd">@current_session</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">current_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the session void pointer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session_id</span> <span class="o">=</span> <span class="n">session</span>
+
+    <span class="k">def</span> <span class="nf">_bind_clib_functions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">libname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads libgmt and binds the library functions to class attributes.</span>
+
+<span class="sd">        Sets the argument and return types for the functions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_libgmt</span> <span class="o">=</span> <span class="n">load_libgmt</span><span class="p">(</span><span class="n">libname</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libgmt</span><span class="o">.</span><span class="n">GMT_Create_Session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_session</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">,</span>
+                                           <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_session</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_destroy_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libgmt</span><span class="o">.</span><span class="n">GMT_Destroy_Session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_destroy_session</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_destroy_session</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_get_enum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libgmt</span><span class="o">.</span><span class="n">GMT_Get_Enum</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_get_enum</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_get_enum</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_call_module</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libgmt</span><span class="o">.</span><span class="n">GMT_Call_Module</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_call_module</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">,</span>
+                                        <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_call_module</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libgmt</span><span class="o">.</span><span class="n">GMT_Create_Data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_data</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>                  <span class="c1"># API</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">,</span>                    <span class="c1"># family</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">,</span>                    <span class="c1"># geometry</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">,</span>                    <span class="c1"># mode</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint64</span><span class="p">),</span>  <span class="c1"># dim</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">),</span>  <span class="c1"># range</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">),</span>  <span class="c1"># inc</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">,</span>                    <span class="c1"># registration</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>                     <span class="c1"># pad</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>                  <span class="c1"># data</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_data</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start the GMT session and keep the session argument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Destroy the session when exiting the context.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destroy_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_session</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_session</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="LibGMT.create_session"><a class="viewcode-back" href="../../../api/gmt.clib.LibGMT.html#gmt.clib.LibGMT.create_session">[docs]</a>    <span class="k">def</span> <span class="nf">create_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the ``GMTAPI_CTRL`` struct required by the GMT C API functions.</span>
+
+<span class="sd">        It is a C void pointer containing the current session information and</span>
+<span class="sd">        cannot be accessed directly.</span>
+
+<span class="sd">        Remember to terminate the current session using</span>
+<span class="sd">        :func:`gmt.clib.LibGMT.destroy_session` before creating a new one.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        session_name : str</span>
+<span class="sd">            A name for this session. Doesn&#39;t really affect the outcome.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        api_pointer : C void pointer (returned by ctypes as an integer)</span>
+<span class="sd">            Used by GMT C API functions.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># None is passed in place of the print function pointer. It becomes the</span>
+        <span class="c1"># NULL pointer when passed to C, prompting the C API to use the default</span>
+        <span class="c1"># print function.</span>
+        <span class="n">print_func</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">padding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_constant</span><span class="p">(</span><span class="s1">&#39;GMT_PAD_DEFAULT&#39;</span><span class="p">)</span>
+        <span class="n">session_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_constant</span><span class="p">(</span><span class="s1">&#39;GMT_SESSION_EXTERNAL&#39;</span><span class="p">)</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_session</span><span class="p">(</span><span class="n">session_name</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">padding</span><span class="p">,</span>
+                                         <span class="n">session_type</span><span class="p">,</span> <span class="n">print_func</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">GMTCLibError</span><span class="p">(</span><span class="s2">&quot;Failed to create a GMT API void pointer.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">session</span></div>
+
+<div class="viewcode-block" id="LibGMT.destroy_session"><a class="viewcode-back" href="../../../api/gmt.clib.LibGMT.html#gmt.clib.LibGMT.destroy_session">[docs]</a>    <span class="k">def</span> <span class="nf">destroy_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Terminate and free the memory of a registered ``GMTAPI_CTRL`` session.</span>
+
+<span class="sd">        The session is created and consumed by the C API modules and needs to</span>
+<span class="sd">        be freed before creating a new. Otherwise, some of the configuration</span>
+<span class="sd">        files might be left behind and can influence subsequent API calls.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        session : C void pointer (returned by ctypes as an integer)</span>
+<span class="sd">            The active session object produced by</span>
+<span class="sd">            :func:`gmt.clib.LibGMT.create_session`.</span>
+<span class="sd">        libgmt : ctypes.CDLL</span>
+<span class="sd">            The ``ctypes.CDLL`` instance for the libgmt shared library.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_destroy_session</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+        <span class="n">check_status_code</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="s1">&#39;GMT_Destroy_Session&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LibGMT.get_constant"><a class="viewcode-back" href="../../../api/gmt.clib.LibGMT.html#gmt.clib.LibGMT.get_constant">[docs]</a>    <span class="k">def</span> <span class="nf">get_constant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the value of a constant (C enum) from gmt_resources.h</span>
+
+<span class="sd">        Used to set configuration values for other API calls. Wraps</span>
+<span class="sd">        ``GMT_Get_Enum``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            The name of the constant (e.g., ``&quot;GMT_SESSION_EXTERNAL&quot;``)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        constant : int</span>
+<span class="sd">            Integer value of the constant. Do not rely on this value because it</span>
+<span class="sd">            might change.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        GMTCLibError</span>
+<span class="sd">            If the constant doesn&#39;t exist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_get_enum</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">==</span> <span class="o">-</span><span class="mi">99999</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">GMTCLibError</span><span class="p">(</span>
+                <span class="s2">&quot;Constant &#39;</span><span class="si">{}</span><span class="s2">&#39; doesn&#39;t exits in libgmt.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">value</span></div>
+
+<div class="viewcode-block" id="LibGMT.call_module"><a class="viewcode-back" href="../../../api/gmt.clib.LibGMT.html#gmt.clib.LibGMT.call_module">[docs]</a>    <span class="k">def</span> <span class="nf">call_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Call a GMT module with the given arguments.</span>
+
+<span class="sd">        Makes a call to ``GMT_Call_Module`` from the C API using mode</span>
+<span class="sd">        ``GMT_MODULE_CMD`` (arguments passed as a single string).</span>
+
+<span class="sd">        Most interactions with the C API are done through this function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        module : str</span>
+<span class="sd">            Module name (``&#39;pscoast&#39;``, ``&#39;psbasemap&#39;``, etc).</span>
+<span class="sd">        args : str</span>
+<span class="sd">            String with the command line arguments that will be passed to the</span>
+<span class="sd">            module (for example, ``&#39;-R0/5/0/10 -JM&#39;``).</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        GMTCLibError</span>
+<span class="sd">            If the returned status code of the functions is non-zero.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_constant</span><span class="p">(</span><span class="s1">&#39;GMT_MODULE_CMD&#39;</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_call_module</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_session</span><span class="p">,</span> <span class="n">module</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span>
+                                     <span class="n">mode</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="n">check_status_code</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="s1">&#39;GMT_Call_Module&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LibGMT.create_data"><a class="viewcode-back" href="../../../api/gmt.clib.LibGMT.html#gmt.clib.LibGMT.create_data">[docs]</a>    <span class="k">def</span> <span class="nf">create_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create an empty GMT data container.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        family : str</span>
+<span class="sd">            A valid GMT data family name (e.g., ``&#39;GMT_IS_DATASET&#39;``). See the</span>
+<span class="sd">            ``data_families`` attribute for valid names.</span>
+<span class="sd">        geometry : str</span>
+<span class="sd">            A valid GMT data geometry name (e.g., ``&#39;GMT_IS_POINT&#39;``). See the</span>
+<span class="sd">            ``data_geometries`` attribute for valid names.</span>
+<span class="sd">        mode : str</span>
+<span class="sd">            A valid GMT data mode (e.g., ``&#39;GMT_OUTPUT&#39;``). See the</span>
+<span class="sd">            ``data_modes`` attribute for valid names.</span>
+<span class="sd">        dim : list of 4 integers</span>
+<span class="sd">            The dimensions of the dataset. See the documentation for the GMT C</span>
+<span class="sd">            API function ``GMT_Create_Data`` (``src/gmt_api.c``) for the full</span>
+<span class="sd">            range of options regarding &#39;dim&#39;. If ``None``, will pass in the</span>
+<span class="sd">            NULL pointer.</span>
+<span class="sd">        ranges : list of 4 floats</span>
+<span class="sd">            The dataset extent. Also a bit of a complicated argument. See the C</span>
+<span class="sd">            function documentation. It&#39;s called ``range`` in the C function but</span>
+<span class="sd">            it would conflict with the Python built-in ``range`` function.</span>
+<span class="sd">        inc : list of 2 floats</span>
+<span class="sd">            The increments between points of the dataset. See the C function</span>
+<span class="sd">            documentation.</span>
+<span class="sd">        registration : int</span>
+<span class="sd">            The node registration (what the coordinates mean). Also a very</span>
+<span class="sd">            complex argument. See the C function documentation. Defaults to</span>
+<span class="sd">            ``GMT_GRID_NODE_REG``.</span>
+<span class="sd">        pad : int</span>
+<span class="sd">            The grid padding. Defaults to ``GMT_PAD_DEFAULT``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        data_ptr : int</span>
+<span class="sd">            A ctypes pointer (an integer) to the allocated ``GMT_Dataset``</span>
+<span class="sd">            object.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        GMTCLibError</span>
+<span class="sd">            In case of invalid inputs or data_ptr being NULL.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Parse and check input arguments</span>
+        <span class="n">family_int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_data_family</span><span class="p">(</span><span class="n">family</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_modes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">GMTCLibError</span><span class="p">(</span><span class="s2">&quot;Invalid data creation mode &#39;</span><span class="si">{}</span><span class="s2">&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">geometry</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_geometries</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">GMTCLibError</span><span class="p">(</span><span class="s2">&quot;Invalid data geometry &#39;</span><span class="si">{}</span><span class="s2">&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">geometry</span><span class="p">))</span>
+
+        <span class="c1"># Convert dim, ranges, and inc to ctypes arrays if given</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="n">kwargs_to_ctypes_array</span><span class="p">(</span><span class="s1">&#39;dim&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint64</span><span class="o">*</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">ranges</span> <span class="o">=</span> <span class="n">kwargs_to_ctypes_array</span><span class="p">(</span><span class="s1">&#39;ranges&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="o">*</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">inc</span> <span class="o">=</span> <span class="n">kwargs_to_ctypes_array</span><span class="p">(</span><span class="s1">&#39;inc&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Use the GMT defaults if no value is given</span>
+        <span class="n">registration</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;registration&#39;</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">get_constant</span><span class="p">(</span><span class="s1">&#39;GMT_GRID_NODE_REG&#39;</span><span class="p">))</span>
+        <span class="n">pad</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pad&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_constant</span><span class="p">(</span><span class="s1">&#39;GMT_PAD_DEFAULT&#39;</span><span class="p">))</span>
+
+        <span class="n">data_ptr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_c_create_data</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_session</span><span class="p">,</span>
+            <span class="n">family_int</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_constant</span><span class="p">(</span><span class="n">geometry</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_constant</span><span class="p">(</span><span class="n">mode</span><span class="p">),</span>
+            <span class="n">dim</span><span class="p">,</span>
+            <span class="n">ranges</span><span class="p">,</span>
+            <span class="n">inc</span><span class="p">,</span>
+            <span class="n">registration</span><span class="p">,</span>
+            <span class="n">pad</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">,</span>  <span class="c1"># NULL pointer for existing data</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">data_ptr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">GMTCLibError</span><span class="p">(</span><span class="s2">&quot;Failed to create an empty GMT data pointer.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data_ptr</span></div>
+
+    <span class="k">def</span> <span class="nf">_parse_data_family</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">family</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse the data family string into an integer  number.</span>
+
+<span class="sd">        Valid family names are: GMT_IS_DATASET, GMT_IS_GRID, GMT_IS_PALETTE,</span>
+<span class="sd">        GMT_IS_TEXTSET, GMT_IS_MATRIX, and GMT_IS_VECTOR.</span>
+
+<span class="sd">        Optionally append a &quot;via&quot; argument to a family name (separated by</span>
+<span class="sd">        ``|``): GMT_VIA_MATRIX or GMT_VIA_VECTOR.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        family : str</span>
+<span class="sd">            A GMT data family name.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        family_value : int</span>
+<span class="sd">            The GMT constant corresponding to the family.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        GMTCLibError</span>
+<span class="sd">            If the family name is invalid or there are more than 2 components</span>
+<span class="sd">            to the name.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">family</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">GMTCLibError</span><span class="p">(</span>
+                <span class="s2">&quot;Too many sections in family (&gt;2): &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">family</span><span class="p">))</span>
+        <span class="n">family_name</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">family_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_families</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">GMTCLibError</span><span class="p">(</span>
+                <span class="s2">&quot;Invalid data family &#39;</span><span class="si">{}</span><span class="s2">&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">family_name</span><span class="p">))</span>
+        <span class="n">family_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_constant</span><span class="p">(</span><span class="n">family_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">via_name</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">via_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_vias</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">GMTCLibError</span><span class="p">(</span>
+                    <span class="s2">&quot;Invalid data family (via) &#39;</span><span class="si">{}</span><span class="s2">&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">via_name</span><span class="p">))</span>
+            <span class="n">via_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_constant</span><span class="p">(</span><span class="n">via_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">via_value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">family_value</span> <span class="o">+</span> <span class="n">via_value</span></div>
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, Leonardo Uieda.<br/>
+      Last updated on Nov 16, 2017.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.5.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

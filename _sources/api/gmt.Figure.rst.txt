@@ -1,0 +1,9 @@
+« :ref:`api`
+
+.. title:: gmt.Figure
+
+.. currentmodule:: gmt
+
+.. autoclass:: Figure
+    :members:
+    :inherited-members:

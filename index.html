@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>GMT/Python &#8212; GMT/Python</title>
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installing" href="install.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default ">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">
+          GMT/Python</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="install.html">Install</a></li>
+                <li><a href="api.html">API</a></li>
+                <li><a href="first-steps.html">Tutorial</a></li>
+                <li><a href="design.html">Design</a></li>
+                <li><a href="https://github.com/GenericMappingTools/gmt-python">Code</a></li>
+                <li><a href="https://gitter.im/GenericMappingTools/gmt-python">Contact</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 content">
+      
+  <div class="banner text-center">
+    <div class="row" stype="margin-bottom: 50px;">
+        <div class="col-md-3">
+        </div>
+        <div class="col-md-6">
+            <img class="center-block" width="100%"
+                 src="_static/gmt-python-logo.png">
+        </div>
+        <div class="col-md-3">
+        </div>
+    </div>
+    <h1>A Python interface for the
+    <a href="http://gmt.soest.hawaii.edu/">Generic Mapping Tools</a></h1>
+</div><h2>Getting started</h2><ol class="arabic simple">
+<li><a class="reference internal" href="install.html#install"><span class="std std-ref">Install</span></a> (tested and working on Linux and OSX)</li>
+<li>Follow the <a class="reference internal" href="first-steps.html"><span class="std std-ref">First Steps</span></a> tutorial Jupyter notebook.</li>
+<li>Take a look at the <a class="reference internal" href="api.html#api"><span class="std std-ref">API Reference</span></a> for a list of modules that are already
+available.</li>
+</ol>
+<div class="admonition-this-package-in-early-stages-of-design-and-implementation admonition">
+<p class="first admonition-title">This package in early stages of design and implementation.</p>
+<p class="last">We welcome any feedback and ideas!
+Let us know by submitting
+<a class="reference external" href="https://github.com/GenericMappingTools/gmt-python/issues">issues on Github</a>
+or send us a message on our
+<a class="reference external" href="https://gitter.im/GenericMappingTools/gmt-python">Gitter chatroom</a>.</p>
+</div>
+<h2>Project goals</h2><ul class="simple">
+<li>Build a modern Pythonic API that appeals to Python programmers who want to
+use GMT.</li>
+<li>Implement readable and explicit aliases for the GMT command-line arguments
+(<code class="docutils literal"><span class="pre">region</span></code> instead of <code class="docutils literal"><span class="pre">R</span></code>, <code class="docutils literal"><span class="pre">projection</span></code> instead of <code class="docutils literal"><span class="pre">J</span></code>, etc).</li>
+<li>Use the new <a class="reference external" href="http://gmt.soest.hawaii.edu/projects/gmt/wiki/Modernization">GMT modern mode</a> for
+simplified execution and figure generation.</li>
+<li>Interface with the GMT C API directly using
+<a class="reference external" href="https://docs.python.org/3/library/ctypes.html">ctypes</a> (no system calls).</li>
+<li>Integration with the <a class="reference external" href="http://jupyter.org/">Jupyter notebook</a> to display
+plots and maps inline.</li>
+<li>Input and output using Python native containers: numpy <code class="docutils literal"><span class="pre">ndarray</span></code> or pandas
+<code class="docutils literal"><span class="pre">DataFrame</span></code> for data tables and <a class="reference external" href="http://xarray.pydata.org">xarray</a>
+<code class="docutils literal"><span class="pre">Dataset</span></code> for netCDF grids.</li>
+</ul>
+<h2>License</h2><p>GMT/Python is free software: you can redistribute it and/or modify it under the
+terms of the <a class="reference internal" href="license.html#license"><span class="std std-ref">BSD 3-clause License</span></a>.</p>
+<div class="toctree-wrapper compound">
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/index.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, Leonardo Uieda.<br/>
+      Last updated on Nov 16, 2017.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.5.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

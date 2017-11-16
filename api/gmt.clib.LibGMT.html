@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>gmt.clib.LibGMT &#8212; GMT/Python</title>
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="../_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Design" href="../design.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="gmt.test.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default ">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          GMT/Python</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../install.html">Install</a></li>
+                <li><a href="../api.html">API</a></li>
+                <li><a href="../first-steps.html">Tutorial</a></li>
+                <li><a href="../design.html">Design</a></li>
+                <li><a href="https://github.com/GenericMappingTools/gmt-python">Code</a></li>
+                <li><a href="https://gitter.im/GenericMappingTools/gmt-python">Contact</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 content">
+      
+  <p>« <a class="reference internal" href="../api.html#api"><span class="std std-ref">API Reference</span></a></p>
+<dl class="class">
+<dt id="gmt.clib.LibGMT">
+<em class="property">class </em><code class="descclassname">gmt.clib.</code><code class="descname">LibGMT</code><span class="sig-paren">(</span><em>libname='libgmt'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gmt/clib/core.html#LibGMT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmt.clib.LibGMT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load and access the GMT shared library (libgmt).</p>
+<p>Works as a context manager to create a GMT C API session and destroy it in
+the end. The context manager feature eliminates the need for the
+<code class="docutils literal"><span class="pre">GMT_Create_Session</span></code> and <code class="docutils literal"><span class="pre">GMT_Destroy_Session</span></code> functions. Thus, they
+are not exposed in the Python API. If you need the void pointer to the GMT
+session, use the <code class="docutils literal"><span class="pre">current_session</span></code> attribute.</p>
+<p>Functions of the shared library are exposed as methods of this class. Most
+methods MUST be used inside the context manager ‘with’ block.</p>
+<p>If creating GMT data structures to communicate data, put that code inside
+this context manager to reuse the same session.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>libname</strong> : str</p>
+<blockquote>
+<div><p>The name of the GMT shared library <strong>without the extension</strong>. Can be a
+full path to the library or just the library name.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>GMTCLibNotFoundError</strong></p>
+<blockquote>
+<div><p>If there was any problem loading the library (couldn’t find it or
+couldn’t access the functions).</p>
+</div></blockquote>
+<p><strong>GMTCLibNoSessionError</strong></p>
+<blockquote class="last">
+<div><p>If you try to call a method outside of a ‘with’ block.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">LibGMT</span><span class="p">()</span> <span class="k">as</span> <span class="n">lib</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">lib</span><span class="o">.</span><span class="n">call_module</span><span class="p">(</span><span class="s1">&#39;figure&#39;</span><span class="p">,</span> <span class="s1">&#39;my-figure&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#gmt.clib.LibGMT.current_session" title="gmt.clib.LibGMT.current_session"><code class="xref py py-obj docutils literal"><span class="pre">current_session</span></code></a></td>
+<td>The C void pointer for the current open GMT session.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#gmt.clib.LibGMT.call_module" title="gmt.clib.LibGMT.call_module"><code class="xref py py-obj docutils literal"><span class="pre">call_module</span></code></a>(module,&nbsp;args)</td>
+<td>Call a GMT module with the given arguments.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#gmt.clib.LibGMT.create_data" title="gmt.clib.LibGMT.create_data"><code class="xref py py-obj docutils literal"><span class="pre">create_data</span></code></a>(family,&nbsp;geometry,&nbsp;mode,&nbsp;**kwargs)</td>
+<td>Create an empty GMT data container.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#gmt.clib.LibGMT.create_session" title="gmt.clib.LibGMT.create_session"><code class="xref py py-obj docutils literal"><span class="pre">create_session</span></code></a>(session_name)</td>
+<td>Create the <code class="docutils literal"><span class="pre">GMTAPI_CTRL</span></code> struct required by the GMT C API functions.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#gmt.clib.LibGMT.destroy_session" title="gmt.clib.LibGMT.destroy_session"><code class="xref py py-obj docutils literal"><span class="pre">destroy_session</span></code></a>(session)</td>
+<td>Terminate and free the memory of a registered <code class="docutils literal"><span class="pre">GMTAPI_CTRL</span></code> session.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#gmt.clib.LibGMT.get_constant" title="gmt.clib.LibGMT.get_constant"><code class="xref py py-obj docutils literal"><span class="pre">get_constant</span></code></a>(name)</td>
+<td>Get the value of a constant (C enum) from gmt_resources.h</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="gmt.clib.LibGMT.call_module">
+<code class="descname">call_module</code><span class="sig-paren">(</span><em>module</em>, <em>args</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gmt/clib/core.html#LibGMT.call_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmt.clib.LibGMT.call_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call a GMT module with the given arguments.</p>
+<p>Makes a call to <code class="docutils literal"><span class="pre">GMT_Call_Module</span></code> from the C API using mode
+<code class="docutils literal"><span class="pre">GMT_MODULE_CMD</span></code> (arguments passed as a single string).</p>
+<p>Most interactions with the C API are done through this function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>module</strong> : str</p>
+<blockquote>
+<div><p>Module name (<code class="docutils literal"><span class="pre">'pscoast'</span></code>, <code class="docutils literal"><span class="pre">'psbasemap'</span></code>, etc).</p>
+</div></blockquote>
+<p><strong>args</strong> : str</p>
+<blockquote>
+<div><p>String with the command line arguments that will be passed to the
+module (for example, <code class="docutils literal"><span class="pre">'-R0/5/0/10</span> <span class="pre">-JM'</span></code>).</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>GMTCLibError</strong></p>
+<blockquote class="last">
+<div><p>If the returned status code of the functions is non-zero.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmt.clib.LibGMT.create_data">
+<code class="descname">create_data</code><span class="sig-paren">(</span><em>family</em>, <em>geometry</em>, <em>mode</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gmt/clib/core.html#LibGMT.create_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmt.clib.LibGMT.create_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an empty GMT data container.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>family</strong> : str</p>
+<blockquote>
+<div><p>A valid GMT data family name (e.g., <code class="docutils literal"><span class="pre">'GMT_IS_DATASET'</span></code>). See the
+<code class="docutils literal"><span class="pre">data_families</span></code> attribute for valid names.</p>
+</div></blockquote>
+<p><strong>geometry</strong> : str</p>
+<blockquote>
+<div><p>A valid GMT data geometry name (e.g., <code class="docutils literal"><span class="pre">'GMT_IS_POINT'</span></code>). See the
+<code class="docutils literal"><span class="pre">data_geometries</span></code> attribute for valid names.</p>
+</div></blockquote>
+<p><strong>mode</strong> : str</p>
+<blockquote>
+<div><p>A valid GMT data mode (e.g., <code class="docutils literal"><span class="pre">'GMT_OUTPUT'</span></code>). See the
+<code class="docutils literal"><span class="pre">data_modes</span></code> attribute for valid names.</p>
+</div></blockquote>
+<p><strong>dim</strong> : list of 4 integers</p>
+<blockquote>
+<div><p>The dimensions of the dataset. See the documentation for the GMT C
+API function <code class="docutils literal"><span class="pre">GMT_Create_Data</span></code> (<code class="docutils literal"><span class="pre">src/gmt_api.c</span></code>) for the full
+range of options regarding ‘dim’. If <code class="docutils literal"><span class="pre">None</span></code>, will pass in the
+NULL pointer.</p>
+</div></blockquote>
+<p><strong>ranges</strong> : list of 4 floats</p>
+<blockquote>
+<div><p>The dataset extent. Also a bit of a complicated argument. See the C
+function documentation. It’s called <code class="docutils literal"><span class="pre">range</span></code> in the C function but
+it would conflict with the Python built-in <code class="docutils literal"><span class="pre">range</span></code> function.</p>
+</div></blockquote>
+<p><strong>inc</strong> : list of 2 floats</p>
+<blockquote>
+<div><p>The increments between points of the dataset. See the C function
+documentation.</p>
+</div></blockquote>
+<p><strong>registration</strong> : int</p>
+<blockquote>
+<div><p>The node registration (what the coordinates mean). Also a very
+complex argument. See the C function documentation. Defaults to
+<code class="docutils literal"><span class="pre">GMT_GRID_NODE_REG</span></code>.</p>
+</div></blockquote>
+<p><strong>pad</strong> : int</p>
+<blockquote>
+<div><p>The grid padding. Defaults to <code class="docutils literal"><span class="pre">GMT_PAD_DEFAULT</span></code>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>data_ptr</strong> : int</p>
+<blockquote>
+<div><p>A ctypes pointer (an integer) to the allocated <code class="docutils literal"><span class="pre">GMT_Dataset</span></code>
+object.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>GMTCLibError</strong></p>
+<blockquote class="last">
+<div><p>In case of invalid inputs or data_ptr being NULL.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmt.clib.LibGMT.create_session">
+<code class="descname">create_session</code><span class="sig-paren">(</span><em>session_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gmt/clib/core.html#LibGMT.create_session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmt.clib.LibGMT.create_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the <code class="docutils literal"><span class="pre">GMTAPI_CTRL</span></code> struct required by the GMT C API functions.</p>
+<p>It is a C void pointer containing the current session information and
+cannot be accessed directly.</p>
+<p>Remember to terminate the current session using
+<a class="reference internal" href="#gmt.clib.LibGMT.destroy_session" title="gmt.clib.LibGMT.destroy_session"><code class="xref py py-func docutils literal"><span class="pre">gmt.clib.LibGMT.destroy_session</span></code></a> before creating a new one.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>session_name</strong> : str</p>
+<blockquote>
+<div><p>A name for this session. Doesn’t really affect the outcome.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>api_pointer</strong> : C void pointer (returned by ctypes as an integer)</p>
+<blockquote class="last">
+<div><p>Used by GMT C API functions.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmt.clib.LibGMT.current_session">
+<code class="descname">current_session</code><a class="headerlink" href="#gmt.clib.LibGMT.current_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>The C void pointer for the current open GMT session.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>GMTCLibNoSessionError</strong></p>
+<blockquote class="last">
+<div><p>If trying to access without a currently open GMT session (i.e.,
+outside of the context manager).</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmt.clib.LibGMT.destroy_session">
+<code class="descname">destroy_session</code><span class="sig-paren">(</span><em>session</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gmt/clib/core.html#LibGMT.destroy_session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmt.clib.LibGMT.destroy_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminate and free the memory of a registered <code class="docutils literal"><span class="pre">GMTAPI_CTRL</span></code> session.</p>
+<p>The session is created and consumed by the C API modules and needs to
+be freed before creating a new. Otherwise, some of the configuration
+files might be left behind and can influence subsequent API calls.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>session</strong> : C void pointer (returned by ctypes as an integer)</p>
+<blockquote>
+<div><p>The active session object produced by
+<a class="reference internal" href="#gmt.clib.LibGMT.create_session" title="gmt.clib.LibGMT.create_session"><code class="xref py py-func docutils literal"><span class="pre">gmt.clib.LibGMT.create_session</span></code></a>.</p>
+</div></blockquote>
+<p><strong>libgmt</strong> : ctypes.CDLL</p>
+<blockquote class="last">
+<div><p>The <code class="docutils literal"><span class="pre">ctypes.CDLL</span></code> instance for the libgmt shared library.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmt.clib.LibGMT.get_constant">
+<code class="descname">get_constant</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gmt/clib/core.html#LibGMT.get_constant"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmt.clib.LibGMT.get_constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the value of a constant (C enum) from gmt_resources.h</p>
+<p>Used to set configuration values for other API calls. Wraps
+<code class="docutils literal"><span class="pre">GMT_Get_Enum</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The name of the constant (e.g., <code class="docutils literal"><span class="pre">&quot;GMT_SESSION_EXTERNAL&quot;</span></code>)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>constant</strong> : int</p>
+<blockquote>
+<div><p>Integer value of the constant. Do not rely on this value because it
+might change.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><strong>GMTCLibError</strong></p>
+<blockquote class="last">
+<div><p>If the constant doesn’t exist.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="../_sources/api/gmt.clib.LibGMT.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, Leonardo Uieda.<br/>
+      Last updated on Nov 16, 2017.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.5.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
